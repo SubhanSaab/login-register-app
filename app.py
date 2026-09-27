@@ -18,7 +18,7 @@ def register():
     password = request.form['password']
 
     if not username or not email or not password:
-        return "All fields are required."
+        return render_template('register.html', error="All fields are required.")
 
     hashed_password = generate_password_hash(password)
 
@@ -32,10 +32,11 @@ def register():
         )
         connection.commit()
         connection.close()
-        return "Registration successful! <a href='/login'>Log in here.</a>"
+        return redirect('/login')
     except sqlite3.IntegrityError:
         connection.close()
-        return "That username or email is already taken. Go back and try again."
+        return render_template('register.html', error="That username or email is already taken.")
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -52,7 +53,7 @@ def login():
     connection.close()
 
     if user is None:
-        return "No account with that email."
+        return render_template('login.html', error="No account with that email.")
 
     stored_hashed_password = user[3]
 
@@ -60,18 +61,18 @@ def login():
         session['username'] = user[1]
         return redirect('/welcome')
     else:
-        return "Incorrect password."
+        return render_template('login.html', error="Incorrect password.")
+
+@app.route('/logout')
+def logout():
+    session.pop('username', None)
+    return redirect('/login')
 
 @app.route('/welcome')
 def welcome():
     if 'username' not in session:
         return redirect('/login')
     return render_template('welcome.html', username=session['username'])
-
-@app.route('/logout')
-def logout():
-    session.pop('username', None)
-    return redirect('/login')
 
 if __name__ == '__main__':
     app.run(debug=True)
